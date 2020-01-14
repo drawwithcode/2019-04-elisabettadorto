@@ -1,117 +1,104 @@
-let rainCircles = [];
-let flowers = [];
-let flowercircles = [];
-let waterDrop;
+let drops = [];
+let sliderRain;
+let thunder;
+let button;
 
+//load sound of the thunder
 function preload() {
-  waterDrop = loadSound("assets/water drop.mp3");
+  thunder = loadSound("./assets/thunder.mp3");
 }
+
 
 function setup() {
   createCanvas(windowWidth, windowHeight);
-  for (var i = 0; i < 30; i++) {
-    let x = random(width);
-    let y = random(height);
-    let r = random(10, 40);
-    let o = random(150, 200);
-    rainCircles[i] = new rainCircle(x, y, r, o);
+
+  // create the thunder button
+  //when you hit the button the sound appear
+  button = createButton('Thunder');
+  button.position(width / 2 - 30, 650);
+  button.mousePressed(ThunderSound);
+
+
+  // create slider to control number of raindrops
+  sliderRain = createSlider(0, 2000, 0);
+  sliderRain.position(10, 10);
+  sliderRain.size(width - 20);
+
+  // create a new raindrop for each loop
+  // push the raindrop to the empty array defined above
+  // max # of raindrops defined as 2000
+  for (let i = 0; i < 2000; i++) {
+    drops[i] = new rainDrop();
   }
-  for (var i = 0; i < 12; i++) {
-    let fx = random(width);
-    let fy = random(height);
-    let fr = random(60, 140);
-    let f = new flower(fx, fy, fr);
-    flowers.push(f);
-  }
+}
+
+//when hit the button
+function ThunderSound() {
+  thunder.play();
+  thunder.setVolume(0.15);
 }
 
 function draw() {
-  background(43, 47, 62);
-  for (var i = 0; i < rainCircles.length; i++) {
-    rainCircles[i].move();
-    rainCircles[i].show();
-    rainCircles[i].color();
-  }
-  for (var i = 0; i < flowers.length; i++) {
-    flowers[i].clicked();
-    flowers[i].show();
-    // flowers[i].move();
+  background(0);
+
+  //draw window with crossbars
+  push();
+  rectMode(CENTER);
+  fill(169, 169, 169);
+  noStroke();
+  rect(width / 2, height / 2, 600, 400);
+  pop();
+
+  push();
+  strokeWeight(10);
+  stroke(0);
+  line(width / 2 - 350, height / 2, width / 2 + 350, height / 2)
+  line(width / 2, height / 2 - 450 / 2, width / 2, height / 2 + 450 / 2);
+  pop();
+
+  //make slider human controled somehow
+  for (i = 0; i < sliderRain.value(); i++) {
+    drops[i].show();
+    drops[i].move();
+
   }
 
 }
 
-function mousePressed() {
-  for (let i = 0; i < flowers.length; i++) {
-    flowers[i].clicked(mouseX, mouseY);
+class rainDrop {
+
+  //Declare the local variables that define the raindrops' starting points
+  constructor() {
+    this.x = random(width);
+    this.y = random(-500, -10);
+    this.z = random(0, 20);
+    this.size = map(this.z, 0, 20, 5, 20);
+    this.speed = map(this.z, 0, 20, 3, 10);
+
+    //Declare a gravity variable that obeys the z-axis rules above
+    this.grav = map(this.z, 0, 20, 0.025, 0.2);
+
   }
-  let r = random(3, 10);
-  let o = random(150, 200);
-  let b = new rainCircle(mouseX, mouseY, r, o);
-  rainCircles.push(b);
-  waterDrop.play();
 
-}
-
-
-//rain circles continues
-function mouseDragged() {
-
-  let r = random(10, 50);
-  let o = random(50, 100);
-  let b = new rainCircle(mouseX, mouseY, r, o);
-  rainCircles.push(b);
-}
-class flower {
-  constructor(fx, fy, fr, fc) {
-    this.fx = fx;
-    this.fy = fy;
-    this.fr = fr;
-    this.fc3 = 111 + random(-30, 30);
-    this.fc2 = 191 + random(-30, 30);
-    this.fc1 = 137 + random(-30, 30);
+  show() {
+    //Draw the raindrop
+    stroke(255);
+    strokeWeight(map(this.z, 0.1, 20, 1, 2));
+    line(this.x, this.y, this.x, this.y + this.size);
   }
-  clicked(px, py) {
-    let d = dist(px, py, this.fx, this.fy);
-    if (d < this.fr) {
-      // console.log("boom");
-      this.fc3 = this.fc3 + random(-50, 50);
-      this.fc2 = this.fc2 + random(-50, 50);
-      this.fc1 = this.fc1 + random(-50, 50);
+
+  //Create the motion of the raindrop
+  move() {
+    this.y = this.y + this.speed;
+    this.speed = this.speed + this.grav //speed increases slightly as it falls to mimick gravity
+
+    // After the raindrop hits the bottom, it resets to its starting point and with its starting speed
+    if (this.y > height) {
+      this.y = random(-200, -10);
+      this.speed = map(this.z, 0, 20, 4, 10);
     }
   }
-
-  show() {
-    noStroke();
-    fill(this.fc1, this.fc2, this.fc3);
-    ellipse(this.fx, this.fy, this.fr);
+  applyForce(f) {
+    this.blow.add(f);
   }
-
-}
-class rainCircle {
-  constructor(x, y, r, o, c) {
-    this.x = x;
-    this.y = y;
-    this.r = r;
-    this.o = o;
-    this.c = c;
-  }
-
-  move() {
-    this.r = this.r + random(1, 4);
-  }
-  color() {
-    this.o = this.o - random(2, 5);
-  }
-  show() {
-
-
-    stroke(240, 228, 213, this.o);
-
-    strokeWeight(4);
-    noFill();
-    ellipse(this.x, this.y, this.r * 2, this.r * 2);
-  }
-
-
-
 }
